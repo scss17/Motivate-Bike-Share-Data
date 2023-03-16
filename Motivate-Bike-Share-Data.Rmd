@@ -1,0 +1,385 @@
+---
+title: "Motivate Bike Share Data"
+author: "PS"
+date: "2023-03-16"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+# Introduction
+
+## About the Project
+
+**Business Task**: The aim of this project is to use data provided by Motivate, a bike share system provider for many major cities in the United States, to uncover bike share usage patterns. I will compare the system usage between three large cities: Chicago, New York City, and Washington, DC. The objective is to be able to answer the following business questions.
+
+1.  **Popular times of travel per city (i.e., occurs most often in the start time)**
+
+    -   What is the most common month?
+    -   What is the most common day of week?
+    -   What is the most common hour of day?
+
+2.  **Popular stations and trip**
+
+    -   What is the most common start station?
+    -   What is the most common end station?
+    -   What is the most common trip from start to end?
+
+3.  **Trip Duration**
+
+    -   What is the average travel time for different kind of user in different cities?
+
+## Abaut the Company
+
+Over the past decade, bicycle-sharing systems have been growing in number and popularity in cities across the world. Bicycle-sharing systems allow users to rent bicycles on a very short-term basis for a price. This allows people to borrow a bike from point A and return it at point B, though they can also return it to the same location if they'd like to just go for a ride. Regardless, each bike can serve several users per day.
+
+[Motivate](https://motivateco.com/about) is a company of logistics which supports organization in the micromobility industry. They take a data-driven approach, ensuring that each of their systems delivers a high-quality experience efficiently. Motivate has experience contracting and operating multi-jurisdiction systems. Currently, they operate in the metro areas of Chicago, New York, Washington D.C., Boston, the San Francisco Bay Area, Minneapolis, Columbus, and Portland.
+
+## About the Data
+
+**Data Used**: The original data set consisted of historical trip data available to the public. This data is provided according to the [Divvy Data License Agreement](https://ride.divvybikes.com/data-license-agreement) and released on a monthly schedule. The data has been processed to remove trips that are taken by staff as they service and inspect the system; and any trips that were below 60 seconds in length (potentially false starts or users trying to re-dock a bike to ensure it was secure).
+
+**Data Organization**: The data I will use consisted of randomly selected data for the first six months of 2017 are provided for all three cities. The original files are much larger and messier. These files had more columns and they differed in format in many cases. Some data wrangling has been performed to condense these files to the above core six columns. All three of the data files contain the same core six (6) columns:
+
+-   Start Time (e.g., 2017-01-01 00:07:57)
+
+-   End Time (e.g., 2017-01-01 00:20:53)
+
+-   Trip Duration (in seconds - e.g., 776)
+
+-   Start Station (e.g., Broadway & Barry Ave)
+
+-   End Station (e.g., Sedgwick St & North Ave)
+
+-   User Type (Subscriber or Customer)
+
+The Chicago and New York City files also have the following two columns:
+
+-   Gender
+
+-   Birth Year
+
+# Process
+
+I will focus on conducting the analysis by utilizing the programming language R. R has a vast collection of packages and libraries that provide powerful and flexible tools for data analysis, visualization, and modeling, and besides that, is free open-source software. I will be using some of the following packages:
+
+-   `ggplot2`: A package for creating visually appealing and informative data visualizations. It is based on the grammar of graphics, which allows users to build complex plots by combining simple components.
+
+-   `dplyr`: A package for data manipulation and transformation. It provides a set of easy-to-use functions for filtering, grouping, summarizing, and joining data, making it a powerful tool for data wrangling tasks.
+
+-   `lubridate`: A package that provides functions to work with dates and times. It makes it easier to parse, manipulate, and format date-time objects in R. The package provides a consistent and user-friendly syntax for common date-time operations, which can be difficult to perform in base R.
+
+-   `readr`: A package for reading in and parsing flat files (e.g. CSV files) into R data frames. It is designed to be fast and memory-efficient, making it ideal for working with large data sets.
+
+-   `janitor`: A package package that provides a set of functions for data cleaning and data tidying tasks. It offers a range of simple and consistent functions that can help clean up messy datasets and quickly perform common data manipulation tasks.
+
+```{r Load libraries, message = FALSE, warning = FALSE}
+library(ggplot2)
+library(dplyr)
+library(lubridate)
+library(readr)
+library(janitor)
+```
+
+In order to answers the question of interest about the Motivate datasets. The following files are used:
+
+-   `chicago.csv`
+
+-   `new_york_city.csv`
+
+-   `washington.csv`
+
+```{r Import data set}
+# Load dataset and remove the first column 
+chicago <- read_csv(file = "data/chicago.csv") %>% select(-1)
+ny <- read_csv(file = "data/new-york-city.csv") %>% select(-1)
+washington <- read_csv(file = "data/washington.csv") %>% select(-1)
+
+
+# Clean up the column names of chicago data frame 
+chicago <- clean_names(chicago)
+
+# Clean up the column names of ny data frame
+ny <- clean_names(ny)
+
+# Clean up the column names of washington data frame 
+washington <- clean_names(washington)
+```
+
+It is necessary to manipulate all the tables and consequently combine them to facilitate the analysis. Therefore, all the files must have the same columns to meet this objective.
+
+-   The column names also need to be changed. I use `clean_names()` function from the `janitor` package to clean up the column names of a data frame.
+-   Two columns, which correspond to the variables `gender` and `birth_year`, are added to `chicago.csv`.
+-   A column that corresponds to the variable `city` is added to all tables, then the column is transformed into a factor with three levels: `washington`, `chicago`, `new york`.
+-   The column `user_type` is transformed into factor.
+-   The combined table, which is named `bike`, is created by the built-in function `rbind`
+
+```{r data manipulation}
+washington$gender <- NA                # Add Gender column to washington
+washington$birth_year <- NA            # Add Birth Year column to washington
+washington$city <- "washington"        # Add City column to washington
+chicago$city <- "chicago"              # Add City column to chicago
+ny$city <- "new york"                  # Add City column to new york
+bike <- rbind(washington, ny, chicago) # Combine all tables together
+
+# Convert the "city" column to a factor with specified levels
+bike$city <- factor(bike$city, levels = c("washington", "chicago", "new york"), ordered = FALSE) 
+
+# Display the structure of the "bike" data frame
+glimpse(bike)
+```
+
+# Analyze
+
+1.  First, I will answer what the most popular times of travel are per city occurred by month, day of the week and hour during the day. The figures showed in the comments section were obtained by using the code at the [end of the page](#Appendix)
+
+    -   What is the most common month?
+    -   What is the most common day of week?
+    -   What is the most common hour of day?
+
+```{r barchar01, fig.width = 10}
+# Create a new variable "month" in the bike data frame
+bike %>% mutate(month = factor(month(start_time, label = TRUE))) %>%
+              
+              # Group the data by month and city, and calculate the number of observations (i.e. trips) in each group.
+              group_by(month, city) %>% summarise(count = n(), .groups = 'drop') %>%
+              
+              # Determine the maximum value for each city
+              group_by(city) %>% mutate(max_value = max(count)) %>%
+              
+              # Create a bar plot of the "month" column, facetted by "city"
+              ggplot(mapping = aes(x = month, y = count)) +
+              
+              # Color the bars with the highest values with a different color
+              geom_bar(aes(fill = ifelse(count == max_value, "seagreen", "red4")),stat = "identity") + 
+              
+              facet_wrap(~ city) + # Facet the plot by "city"
+              scale_fill_manual(values = c("seagreen", "red4")) + # Set the fill colors manually
+              theme(legend.position = "none") + # Remove the legend
+              labs(y = "Count", x = "Month") # Add labels for the axes
+```
+
+**Comments**
+
+-   The most popular month in **Washington** is June with 68,022 bikes rented.
+
+-   The most popular month in **Chicago** is **June** with 98,081 bikes rented.
+
+-   The most popular month in **New York** is June with 76,022 bikes rented.
+
+-   In summary, the most popular month in across all cities is **June** with 242,442 bikes rented.
+
+```{r barchar02, fig.width = 10}
+# Create a new variable "day" in the bike data frame
+bike %>% mutate(day = factor(wday(start_time, label = TRUE))) %>%
+              
+              # Group the data by month and city, and calculate the number of observations (i.e. trips) in each group.
+              group_by(day, city) %>% summarise(count = n(), .groups = 'drop') %>%
+              
+              # Determine the maximum value for each city
+              group_by(city) %>% mutate(max_value = max(count)) %>%
+              
+              # Create a bar plot of the "month" column, facetted by "city"
+              ggplot(mapping = aes(x = day, y = count)) +
+              
+              # Color the bars with the highest values with a different color
+              geom_bar(aes(fill = ifelse(count == max_value, "seagreen", "red4")),stat = "identity") + 
+              
+              facet_wrap(~ city) + # Facet the plot by "city"
+              scale_fill_manual(values = c("seagreen", "red4")) + # Set the fill colors manually
+              theme(legend.position = "none") + # Remove the legend
+              labs(y = "Count", x = "Day") # Add labels for the axes 
+
+```
+
+**Comments**
+
+-   The most popular day in **Washington** is **Wednesday** with 48,156 bikes rented.
+
+-   The most popular day in **Chicago** is Tusday with 45,912 bikes rented.
+
+-   The most popular day in **New York** is **Wednesday** with 52,087 bikes rented.
+
+-   In summary, the most popular day in across all cities is **Wednesday** with 142,277 bikes rented.
+
+```{r barchar03, fig.width = 10}
+# Create a new variable "hour" in the bike data frame
+bike %>% mutate(hour = factor(hour(start_time))) %>%
+              
+              # Group the data by month and city, and calculate the number of observations (i.e. trips) in each group.
+              group_by(hour, city) %>% summarise(count = n(), .groups = 'drop') %>%
+              
+              # Determine the maximum value for each city
+              group_by(city) %>% mutate(max_value = max(count)) %>%
+              
+              # Create a bar plot of the "month" column, facetted by "city"
+              ggplot(mapping = aes(x = hour, y = count)) +
+              
+              # Color the bars with the highest values with a different color
+              geom_bar(aes(fill = ifelse(count == max_value, "seagreen", "red4")), stat = "identity") + 
+              
+              facet_wrap(~ city) + # Facet the plot by "city"
+              scale_fill_manual(values = c("seagreen", "red4")) + # Set the fill colors manually
+              theme(legend.position = "none") + # Remove the legend
+              labs(y = "Count", x = "Hour") # Add labels for the axes
+```
+
+**Comments**:
+
+-   The most popular hour in **Washington** is about 8:00 AM with 33,019 bikes rented.
+
+-   The most popular hour in **Chicago** is about 5:oo PM with 35,992 bikes rented.
+
+-   The most popular hour in **New York** is about 5:00 PM with 30,041 bikes rented.
+
+-   In summary, the most popular day in across all cities is about 8:00 AM with 81,734 bikes rented.
+
+2.  Second,I will answer what the most popular station and trip are accordin to the questions below. For this, I will create a function.
+
+-   What is the most common start station?
+-   What is the most common end station?
+-   What is the most common trip from start to end?
+
+To answer these questions a function will be built. This function will return a top raked of the different type of travels, either start point, end point or from start to end, and besides that, either one or across all the cities which are present in the dataset. The arguments of the function are as following:
+
+-   **data**: A dataframe.
+-   **top**: A numeric value which represents the number of elements shown in the result. Default as 10.
+-   **type**: A character string with tree possibilities: `start`, `end`, `travel`. Default as "start".
+-   **city**: A character string with multiple possibilities, either one city present in the dataset or all of them. Default as "all" cities.
+
+```{r fucntion01}
+# Create a function to get the common stations
+common_stations <- function(data, top = 10, type = "start", city = "all"){
+              
+              # Check if dplyr is loaded in R environment
+              if(!("dplyr" %in% (.packages()))) {
+                            library(dplyr)
+              } 
+    
+              # Check the city condition
+              if(city == "all"){
+                            
+                            # Run the function: Check the result type
+                            # Select the most common trip starting point
+                            if(type == "start") {
+                                          data %>% group_by(start_station, city, .groups = 'drop') %>% 
+                                                        summarise(trips_count = n(), .groups = 'drop') %>%
+                                                        arrange(desc(trips_count)) %>% head(top)
+                                          
+                            # Select the most common trip ending point
+                            } else if(type == "end") {
+                                          data %>% group_by(end_station, city,, .groups = 'drop') %>% 
+                                                        summarise(trips_count = n(), .groups = 'drop') %>%
+                                                        arrange(desc(trips_count)) %>% head(top)
+                                          
+                            # Select the most common trips               
+                            } else if(type == "trip"){
+                                          data$trip_stations <- paste("from", bike$start_station, 
+                                                                      "to", bike$end_station)
+                                          
+                                          data %>% group_by(trip_stations, city) %>% 
+                                                        summarise(trips_count = n(), .groups = 'drop') %>%
+                                                        arrange(desc(trips_count)) %>% head(top)
+                                          
+                            # Otherwise show a message              
+                            } else {
+                                          print("PLEACE INTRODUCE A VALID RESULT TYPE")
+                            }
+                            
+              } else {
+                            
+                            # Run the function: Check the result type
+                            # Select the most common trip starting point
+                            if(type == "start") {
+                                          data %>% filter(city == city) %>%
+                                                        group_by(start_station) %>% 
+                                                        summarise(trips_count = n(), .groups = 'drop') %>%
+                                                        arrange(desc(trips_count)) %>% head(top)
+                                          
+                            # Select the most common trip ending point
+                            } else if(type == "end") {
+                                          data %>% filter(city == city) %>%
+                                                        group_by(end_station) %>% 
+                                                        summarise(trips_count = n(), .groups = 'drop') %>%
+                                                        arrange(desc(trips_count)) %>% head(top)
+                                          
+                            # Select the most common trips               
+                            } else if(type == "trip"){
+                                          data$trip_stations <- paste("from", bike$start_station, 
+                                                                      "to", bike$end_station)
+                                          
+                                          data %>% filter(city == city) %>%
+                                                        group_by(trip_stations, city) %>% 
+                                                        summarise(trips_count = n(), .groups = 'drop') %>%
+                                                        arrange(desc(trips_count)) %>% head(top)
+                                          
+                            # Otherwise show a message              
+                            } else {
+                                          print("PLEACE INTRODUCE A VALID RESULT TYPE")
+                            }
+              }
+}
+```
+
+To test the function the following will be computed:
+
+- Top 5 starting travel point from all cities.
+- Top 6 ending travel point from all cities.
+- Top 10 from start end trip only in New York City
+
+```{r test01}
+common_stations(bike, top = 5, type = "start", "all")
+common_stations(bike, top = 6, type = "end", "all")
+common_stations(bike, top = 10, type = "trip", "new york")
+```
+
+3. I will answer what the trip duration is. For this, I will create a function. To answer this question a function will be built. This function will return average travel time for different kind of user in different cities for all the kind of users and cities present in the dataset, The function only requires a data frame and the result will be printed in the console.
+
+- What is the average travel time for different kind of user in different cities?
+
+```{r function02}
+trip_duration <- function(data) {
+              
+              # Check if dplyr is loaded in R environment
+              if(!("dplyr" %in% (.packages()))) {
+                            library(dplyr)
+              } 
+              
+              # Transform empty string to NA
+              data$user_type <- ifelse(data$user_type == "", NA, data$user_type)
+              
+              # Calculate the average trip duration per user type and city 
+              temp <- data %>% select(user_type, trip_duration, city) %>%
+                            filter(!is.na(user_type)) %>%
+                            group_by(city, user_type) %>%
+                            summarise(trip_ave = mean(trip_duration), .groups = 'drop') %>%
+                            arrange(city)
+              
+              # Get a vector of the cities
+              user <- unique(temp$user_type)
+              cities <- unique(temp$city)
+              
+              # Print the results
+              for(city_name in cities) {
+                            cat("In ", city_name, " city:\n\n", sep = "")
+                            users <- unique(subset(temp, city == city_name))$user_type
+                            
+                            # Check for the user type
+                            for(user in users){
+                                          
+                                          # Check the average trip length
+                                          i <- which(users == user)
+                                          cat("The Average Trip Length for ", 
+                                              user, "is:", round(subset(temp, city == city_name)$trip_ave[i] / 60, 2), "minutes\n")
+                            }
+                            cat("\n")
+              }
+}
+```
+
+```{r test02}
+trip_duration(bike)
+```
+

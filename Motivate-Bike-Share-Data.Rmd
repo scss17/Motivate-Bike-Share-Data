@@ -31,7 +31,7 @@ knitr::opts_chunk$set(echo = TRUE)
 
     -   What is the average travel time for different kind of user in different cities?
 
-## Abaut the Company
+## About the Company
 
 Over the past decade, bicycle-sharing systems have been growing in number and popularity in cities across the world. Bicycle-sharing systems allow users to rent bicycles on a very short-term basis for a price. This allows people to borrow a bike from point A and return it at point B, though they can also return it to the same location if they'd like to just go for a ride. Regardless, each bike can serve several users per day.
 
@@ -75,7 +75,7 @@ I will focus on conducting the analysis by utilizing the programming language R.
 
 -   `janitor`: A package package that provides a set of functions for data cleaning and data tidying tasks. It offers a range of simple and consistent functions that can help clean up messy datasets and quickly perform common data manipulation tasks.
 
-```{r Load libraries, message = FALSE, warning = FALSE}
+```{r Load libraries}
 library(ggplot2)
 library(dplyr)
 library(lubridate)
@@ -94,7 +94,7 @@ In order to answers the question of interest about the Motivate datasets. The fo
 ```{r Import data set}
 # Load dataset and remove the first column 
 chicago <- read_csv(file = "data/chicago.csv") %>% select(-1)
-ny <- read_csv(file = "data/new-york-city.csv") %>% select(-1)
+ny <- read_csv(file = "data/new_york_city.csv") %>% select(-1)
 washington <- read_csv(file = "data/washington.csv") %>% select(-1)
 
 
@@ -128,7 +128,7 @@ bike <- rbind(washington, ny, chicago) # Combine all tables together
 bike$city <- factor(bike$city, levels = c("washington", "chicago", "new york"), ordered = FALSE) 
 
 # Display the structure of the "bike" data frame
-glimpse(bike)
+gimpse(bike)
 ```
 
 # Analyze
@@ -139,7 +139,7 @@ glimpse(bike)
     -   What is the most common day of week?
     -   What is the most common hour of day?
 
-```{r barchar01, fig.width = 10}
+```{r barchar01}
 # Create a new variable "month" in the bike data frame
 bike %>% mutate(month = factor(month(start_time, label = TRUE))) %>%
               
@@ -171,7 +171,7 @@ bike %>% mutate(month = factor(month(start_time, label = TRUE))) %>%
 
 -   In summary, the most popular month in across all cities is **June** with 242,442 bikes rented.
 
-```{r barchar02, fig.width = 10}
+```{r barchar02}
 # Create a new variable "day" in the bike data frame
 bike %>% mutate(day = factor(wday(start_time, label = TRUE))) %>%
               
@@ -204,7 +204,7 @@ bike %>% mutate(day = factor(wday(start_time, label = TRUE))) %>%
 
 -   In summary, the most popular day in across all cities is **Wednesday** with 142,277 bikes rented.
 
-```{r barchar03, fig.width = 10}
+```{r barchar03}
 # Create a new variable "hour" in the bike data frame
 bike %>% mutate(hour = factor(hour(start_time))) %>%
               

@@ -217,4 +217,3 @@ trip_duration <- function(data) {
                 cat("\n")
         }
 }
-
